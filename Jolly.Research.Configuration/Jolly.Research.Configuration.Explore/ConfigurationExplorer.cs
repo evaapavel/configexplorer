@@ -65,6 +65,13 @@ public class ConfigurationExplorer
             .AppendLine();
     }
 
+    private void SerializeValueWithoutKey(IConfigurationSection configurationSection, int indentation, StringBuilder stringBuilder)
+    {
+        stringBuilder
+            .AppendFormat("{0}{1},", IndentSpaces(indentation), SerializeValue(configurationSection.Value))
+            .AppendLine();
+    }
+
     private void SerializeArraySection(IConfigurationSection configurationSection, int indentation, StringBuilder stringBuilder)
     {
         stringBuilder
@@ -73,7 +80,7 @@ public class ConfigurationExplorer
 
         foreach (var child in configurationSection.GetChildren())
         {
-            Serialize(child, indentation + TabSize, stringBuilder);
+            SerializeValueWithoutKey(child, indentation + TabSize, stringBuilder);
         }
         
         stringBuilder
