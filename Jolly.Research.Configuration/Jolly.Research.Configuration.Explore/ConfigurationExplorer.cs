@@ -54,7 +54,9 @@ public class ConfigurationExplorer
                 Serialize(child, indentation + TabSize, stringBuilder);
             }
             
-            stringBuilder.AppendLine("}");
+            stringBuilder
+                .AppendFormat("{0}}}", IndentSpaces(indentation))
+                .AppendLine();
         }
 
         stringBuilder
