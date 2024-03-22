@@ -1,0 +1,9 @@
+.vs/
+bin/
+obj/
+*.suo
+*.csproj.user
+packages/
+.leu
+.idea/
+*.sln.DotSettings.user
