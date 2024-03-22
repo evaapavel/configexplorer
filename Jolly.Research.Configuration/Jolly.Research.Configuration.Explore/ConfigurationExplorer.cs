@@ -27,12 +27,22 @@ public class ConfigurationExplorer
 
     private void Serialize(IConfiguration configurationPart, int indentation, StringBuilder stringBuilder)
     {
-        if (configurationPart is not IConfigurationSection configurationSection)
+        switch (configurationPart)
         {
-            throw new NotSupportedException(
-                $"This configuration object is not supported here: {configurationPart.GetType().FullName}");
+            case IConfigurationRoot configurationRoot:
+                SerializeRoot(configurationRoot, indentation, stringBuilder);
+                break;
+            case IConfigurationSection configurationSection:
+                SerializeSection(configurationSection, indentation, stringBuilder);
+                break;
+            default:
+                throw new NotSupportedException(
+                    $"This configuration object is not supported here: {configurationPart.GetType().FullName}");
         }
+    }
 
+    private void SerializeSection(IConfigurationSection configurationSection, int indentation, StringBuilder stringBuilder)
+    {
         if (configurationSection.GetChildren().Any())
         {
             stringBuilder
@@ -50,6 +60,18 @@ public class ConfigurationExplorer
         stringBuilder
             .AppendFormat("{0}\"{1}\": {2}", IndentSpaces(indentation), configurationSection.Key, SerializeValue(configurationSection.Value))
             .AppendLine();
+    }
+
+    private void SerializeRoot(IConfigurationRoot configurationRoot, int indentation, StringBuilder stringBuilder)
+    {
+        stringBuilder.AppendLine("{");
+
+        foreach (var child in configurationRoot.GetChildren())
+        {
+            Serialize(child, indentation + TabSize, stringBuilder);
+        }
+        
+        stringBuilder.AppendLine("}");
     }
 
     private string IndentSpaces(int indentation)
