@@ -12,28 +12,37 @@ public class ConfigurationExplorer
     private const int TabSize = 2;
     
     private readonly IConfiguration _configuration;
+    private StringBuilder _stringBuilder = null!;
 
+    /// <summary>
+    /// Constructor.
+    /// </summary>
+    /// <param name="configuration">Root of the configuration object graph to serialize.</param>
     public ConfigurationExplorer(IConfiguration configuration)
     {
         _configuration = configuration;
     }
 
+    /// <summary>
+    /// Serializes the configuration to a string. Beautifies the output to make it more human readable.
+    /// </summary>
+    /// <returns>Returns a string representation of the configuration stored in this instance.</returns>
     public string Serialize()
     {
-        var stringBuilder = new StringBuilder();
-        Serialize(_configuration, 0, stringBuilder);
-        return stringBuilder.ToString();
+        _stringBuilder = new StringBuilder();
+        Serialize(_configuration, 0);
+        return _stringBuilder.ToString();
     }
 
-    private void Serialize(IConfiguration configurationPart, int indentation, StringBuilder stringBuilder)
+    private void Serialize(IConfiguration configurationPart, int indentation)
     {
         switch (configurationPart)
         {
             case IConfigurationRoot configurationRoot:
-                SerializeRoot(configurationRoot, indentation, stringBuilder);
+                SerializeRoot(configurationRoot, indentation);
                 break;
             case IConfigurationSection configurationSection:
-                SerializeSection(configurationSection, indentation, stringBuilder);
+                SerializeSection(configurationSection, indentation);
                 break;
             default:
                 throw new NotSupportedException(
@@ -41,79 +50,79 @@ public class ConfigurationExplorer
         }
     }
 
-    private void SerializeSection(IConfigurationSection configurationSection, int indentation, StringBuilder stringBuilder)
+    private void SerializeSection(IConfigurationSection configurationSection, int indentation)
     {
         if (IsSingleValueSection(configurationSection))
         {
-            SerializeSingleValueSection(configurationSection, indentation, stringBuilder);
+            SerializeSingleValueSection(configurationSection, indentation);
             return;
         }
 
         if (IsArraySection(configurationSection))
         {
-            SerializeArraySection(configurationSection, indentation, stringBuilder);
+            SerializeArraySection(configurationSection, indentation);
             return;
         }
         
-        SerializeSectionWithChildren(configurationSection, indentation, stringBuilder);
+        SerializeSectionWithChildren(configurationSection, indentation);
     }
 
-    private void SerializeSingleValueSection(IConfigurationSection configurationSection, int indentation, StringBuilder stringBuilder)
+    private void SerializeSingleValueSection(IConfigurationSection configurationSection, int indentation)
     {
-        stringBuilder
+        _stringBuilder
             .AppendFormat("{0}\"{1}\": {2},", IndentSpaces(indentation), configurationSection.Key, SerializeValue(configurationSection.Value))
             .AppendLine();
     }
 
-    private void SerializeValueWithoutKey(IConfigurationSection configurationSection, int indentation, StringBuilder stringBuilder)
+    private void SerializeValueWithoutKey(IConfigurationSection configurationSection, int indentation)
     {
-        stringBuilder
+        _stringBuilder
             .AppendFormat("{0}{1},", IndentSpaces(indentation), SerializeValue(configurationSection.Value))
             .AppendLine();
     }
 
-    private void SerializeArraySection(IConfigurationSection configurationSection, int indentation, StringBuilder stringBuilder)
+    private void SerializeArraySection(IConfigurationSection configurationSection, int indentation)
     {
-        stringBuilder
+        _stringBuilder
             .AppendFormat("{0}\"{1}\": [", IndentSpaces(indentation), configurationSection.Key)
             .AppendLine();
 
         foreach (var child in configurationSection.GetChildren())
         {
-            SerializeValueWithoutKey(child, indentation + TabSize, stringBuilder);
+            SerializeValueWithoutKey(child, indentation + TabSize);
         }
         
-        stringBuilder
+        _stringBuilder
             .AppendFormat("{0}],", IndentSpaces(indentation))
             .AppendLine();
     }
 
-    private void SerializeSectionWithChildren(IConfigurationSection configurationSection, int indentation, StringBuilder stringBuilder)
+    private void SerializeSectionWithChildren(IConfigurationSection configurationSection, int indentation)
     {
-        stringBuilder
+        _stringBuilder
             .AppendFormat("{0}\"{1}\": {{", IndentSpaces(indentation), configurationSection.Key)
             .AppendLine();
 
         foreach (var child in configurationSection.GetChildren())
         {
-            Serialize(child, indentation + TabSize, stringBuilder);
+            Serialize(child, indentation + TabSize);
         }
         
-        stringBuilder
+        _stringBuilder
             .AppendFormat("{0}}},", IndentSpaces(indentation))
             .AppendLine();
     }
     
-    private void SerializeRoot(IConfigurationRoot configurationRoot, int indentation, StringBuilder stringBuilder)
+    private void SerializeRoot(IConfigurationRoot configurationRoot, int indentation)
     {
-        stringBuilder.AppendLine("{");
+        _stringBuilder.AppendLine("{");
 
         foreach (var child in configurationRoot.GetChildren())
         {
-            Serialize(child, indentation + TabSize, stringBuilder);
+            Serialize(child, indentation + TabSize);
         }
         
-        stringBuilder.AppendLine("}");
+        _stringBuilder.AppendLine("}");
     }
 
     private bool IsSingleValueSection(IConfigurationSection configurationSection)
