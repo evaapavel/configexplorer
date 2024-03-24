@@ -50,6 +50,18 @@ public class ConfigurationExplorer
         }
     }
 
+    private void SerializeRoot(IConfigurationRoot configurationRoot, int indentation)
+    {
+        _stringBuilder.AppendLine("{");
+
+        foreach (var child in configurationRoot.GetChildren())
+        {
+            Serialize(child, indentation + TabSize);
+        }
+        
+        _stringBuilder.AppendLine("}");
+    }
+    
     private void SerializeSection(IConfigurationSection configurationSection, int indentation)
     {
         if (IsSingleValueSection(configurationSection))
@@ -74,13 +86,6 @@ public class ConfigurationExplorer
             .AppendLine();
     }
 
-    private void SerializeValueWithoutKey(IConfigurationSection configurationSection, int indentation)
-    {
-        _stringBuilder
-            .AppendFormat("{0}{1},", IndentSpaces(indentation), SerializeValue(configurationSection.Value))
-            .AppendLine();
-    }
-
     private void SerializeArraySection(IConfigurationSection configurationSection, int indentation)
     {
         _stringBuilder
@@ -89,7 +94,9 @@ public class ConfigurationExplorer
 
         foreach (var child in configurationSection.GetChildren())
         {
-            SerializeValueWithoutKey(child, indentation + TabSize);
+            //SerializeValueWithoutKey(child, indentation + TabSize);
+            //SerializeSection(child.Value, indentation + TabSize);
+            SerializeArrayItem(child, indentation + TabSize);
         }
         
         _stringBuilder
@@ -113,17 +120,65 @@ public class ConfigurationExplorer
             .AppendLine();
     }
     
-    private void SerializeRoot(IConfigurationRoot configurationRoot, int indentation)
+    private void SerializeArrayItem(IConfigurationSection configurationSection, int indentation)
     {
-        _stringBuilder.AppendLine("{");
+        if (IsSingleValueSection(configurationSection))
+        {
+            SerializeArrayItemWithSingleValue(configurationSection, indentation);
+            return;
+        }
 
-        foreach (var child in configurationRoot.GetChildren())
+        if (IsArraySection(configurationSection))
+        {
+            SerializeArrayItemWithArray(configurationSection, indentation);
+            return;
+        }
+        
+        SerializeArrayItemWithChildren(configurationSection, indentation);
+    }
+
+    private void SerializeArrayItemWithSingleValue(IConfigurationSection configurationSection, int indentation)
+    {
+        _stringBuilder
+            .AppendFormat("{0}{1},", IndentSpaces(indentation), SerializeValue(configurationSection.Value))
+            .AppendLine();
+    }
+
+    private void SerializeArrayItemWithArray(IConfigurationSection configurationSection, int indentation)
+    {
+        _stringBuilder
+            .AppendFormat("{0}[", IndentSpaces(indentation))
+            .AppendLine();
+
+        foreach (var child in configurationSection.GetChildren())
+        {
+            SerializeArrayItem(child, indentation + TabSize);
+        }
+        
+        _stringBuilder
+            .AppendFormat("{0}],", IndentSpaces(indentation))
+            .AppendLine();
+    }
+
+    private void SerializeArrayItemWithChildren(IConfigurationSection configurationSection, int indentation)
+    {
+        _stringBuilder
+            .AppendFormat("{0}{{", IndentSpaces(indentation))
+            .AppendLine();
+
+        foreach (var child in configurationSection.GetChildren())
         {
             Serialize(child, indentation + TabSize);
         }
         
-        _stringBuilder.AppendLine("}");
+        _stringBuilder
+            .AppendFormat("{0}}},", IndentSpaces(indentation))
+            .AppendLine();
     }
+
+    // *********************************************************************************************************
+    // Helpers
+    // *********************************************************************************************************
 
     private bool IsSingleValueSection(IConfigurationSection configurationSection)
     {
